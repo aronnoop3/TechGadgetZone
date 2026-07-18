@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Payment Verification | Tech Gadget Zone India</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+
+  padding:20px;
+}
+
+.container{
+    width:100%;
+    max-width:700px;
+}
+
+.header {
+    width: 100%;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    border-radius: 
+    padding: 35px 25px;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 20px;
+    box-shadow: 0 15px 40px rgba(37, 99, 235, .25);
+}
+
+.success-icon{
+    width:80px;
+    height:80px;
+    margin:auto;
+    background:#fff;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#16a34a;
+    font-size:42px;
+    font-weight:700;
+    margin-bottom:15px;
+}
+
+.header h1{
+    font-size:28px;
+    font-weight:700;
+    margin-bottom:10px;
+}
+
+.header p{
+    font-size:15px;
+    line-height:1.8;
+    opacity:.95;
+}
+
+.content{
+    width:100%;
+}
+
+.card{
+    width:100%;
+    background:#fff;
+    border-radius:20px;
+    padding:22px;
+    margin-bottom:20px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 10px 25px rgba(0,0,0,.05);
+}
+.card h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 18px;
+}
+
+.notice {
+    font-size: 15px;
+    color: #4b5563;
+    line-height: 1.8;
+}
+
+.notice strong {
+    color: #16a34a;
+}
+
+.payment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px dashed #d1d5db;
+    font-size: 15px;
+}
+
+.payment-row:last-child {
+    border-bottom: none;
+}
+
+.payment-row span:last-child {
+    font-weight: 700;
+    color: #111827;
+}
+
+.qr-box {
+    text-align: center;
+}
+
+.qr-box img {
+    width: 260px;
+    max-width: 100%;
+    border-radius: 18px;
+    border: 8px solid #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+}
+
+.timer {
+    margin-top: 18px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #dc2626;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    flex: 1;
+    min-width: 180px;
+    text-align: center;
+    text-decoration: none;
+    padding: 16px;
+    border-radius: 14px;
+    color: #fff;
+    font-weight: 600;
+    transition: .3s;
+    cursor: pointer;
+}
+
+.pay-btn {
+    background: #16a34a;
+}
+
+.pay-btn:hover {
+    background: #15803d;
+}
+
+.upload-btn {
+    background: #2563eb;
+}
+
+.upload-btn:hover {
+    background: #1d4ed8;
+}
+
+.note {
+    background: #fff7ed;
+    border-left: 5px solid #f59e0b;
+    border-radius: 16px;
+    padding: 18px;
+    font-size: 14px;
+    color: #92400e;
+    line-height: 1.8;
+    margin-top: 20px;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 25px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+@media(max-width:768px) {
+    
+    .header {
+        padding: 28px 18px;
+    }
+    
+    .header h1 {
+        font-size: 24px;
+    }
+    
+    .success-icon {
+        width: 70px;
+        height: 70px;
+        font-size: 36px;
+    }
+    
+    .qr-box img {
+        width: 220px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .payment-row {
+        font-size: 14px;
+    }
+    
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <div class="success-icon">✓</div>
+
+        <h1>Order Request Received!</h1>
+
+        <p>
+            Please complete the advance payment to confirm your order.
+        </p>
+
+    </div>
+
+    <div class="content">
+
+        <div class="card">
+
+            <h3>Order Confirmation</h3>
+
+            <p class="notice">
+                To reserve your selected product, an advance payment of
+                <strong>₹5,000</strong> is required.
+                Your order will be confirmed immediately after successful payment verification.
+            </p>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Payment Details</h3>
+
+            <div class="payment-row">
+                <span>Order ID</span>
+                <span>#TGZ102548</span>
+            </div>
+
+            <div class="payment-row">
+                <span>Product</span>
+                <span>Premium Smartphone</span>
+            </div>
+
+            <div class="payment-row">
+                <span>Paid Amount</span>
+                <span>₹5000</span>
+            </div>
+
+            <div class="payment-row">
+    <span>Product</span>
+    <span>Smartphone</span>
+</div>
+
+
+            <div class="payment-row">
+                <span>Payment Method</span>
+                <span>UPI QR Code</span>
+            </div>
+
+        </div>
+
+        <div class="card qr-box">
+
+            <h3>Scan QR Code</h3>
+
+            <img src="images/shop.jpg" alt="QR Code">
+
+            <div class="timer">
+                QR Expires In :
+                <span id="countdown">10:00</span>
+            </div>
+
+        </div>
+
+        <div class="button-group">
+
+            <a href="upi://pay?pa=7866986738@axl&pn=Tech Gadget Zone India&am=5000&cu=INR" class="btn pay-btn">
+    💳 Proceed Payment
+<a href="https://wa.me/16728972711?text=I%20have%20completed%20the%20payment.%20I%20am%20sending%20my%20payment%20screenshot."
+class="btn upload-btn">
+📤 Upload Screenshot
+</a>
+
+            <input
+                type="file"
+                id="paymentScreenshot"
+                accept="image/*"
+                hidden>
+
+        </div>
+
+        <div class="note">
+
+            <strong>Important Notice</strong><br><br>
+
+            Please upload a clear payment screenshot after completing your payment.
+
+            <br><br>
+
+            Our verification team will review it and activate your order within a few minutes.
+
+        </div>
+
+        <div class="footer">
+            © 2026 Tech Gadget Zone India<br>
+            Secure Payment Verification
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+let time = 600;
+
+const countdown = document.getElementById("countdown");
+
+setInterval(function(){
+
+    if(time > 0){
+
+        time--;
+
+        let min = Math.floor(time / 60);
+
+        let sec = time % 60;
+
+        countdown.innerHTML =
+            String(min).padStart(2,'0') + ":" +
+            String(sec).padStart(2,'0');
+
+    }
+
+},1000);
+
+</script>
+
+</body>
+</html>
