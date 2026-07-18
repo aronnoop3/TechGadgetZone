@@ -1,75 +1,813 @@
-<script>
-// Load dynamic configuration parameters and state
-const defaultSystemSettings = {
-    upiId: "7866986738@axl",
-    merchantName: "Tech Gadget Zone India",
-    advanceAmt: 5000,
-    waNumber: "16728972711",
-    qrImg: "images/shop.jpg"
-};
-
-function getActiveSettings() {
-    let settings = localStorage.getItem('tgzi_settings');
-    return settings ? JSON.parse(settings) : defaultSystemSettings;
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    const settings = getActiveSettings();
-    const activeOrderId = localStorage.getItem('tgzi_active_order_id');
-    const orders = JSON.parse(localStorage.getItem('tgzi_orders') || '[]');
-    
-    // Find matching order in local storage
-    const currentOrder = orders.find(o => o.id === activeOrderId) || {
-        id: "#TGZ102548",
-        productModel: "Premium Smartphone",
-        advanceAmount: settings.advanceAmt
-    };
-
-    // 1. Dynamic Payment Page update
-    document.querySelectorAll(".card strong, .payment-row span").forEach(el => {
-        if(el.textContent.includes("₹5,000") || el.textContent.includes("₹5000")) {
-            el.innerHTML = `₹${parseInt(settings.advanceAmt).toLocaleString('en-IN')}`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Tech Gadget Zone India</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1d4ed8;
+            --success-color: #16a34a;
+            --warning-color: #eab308;
+            --danger-color: #dc2626;
+            --dark-color: #1f2937;
+            --light-color: #f3f4f6;
+            --border-color: #e5e7eb;
         }
-    });
 
-    // Populate order summary data fields
-    const paymentRows = document.querySelectorAll(".payment-row");
-    if(paymentRows.length >= 3) {
-        paymentRows[0].querySelectorAll("span")[1].textContent = `#${currentOrder.id}`;
-        paymentRows[1].querySelectorAll("span")[1].textContent = currentOrder.productModel;
-        paymentRows[2].querySelectorAll("span")[1].textContent = `₹${parseInt(settings.advanceAmt).toLocaleString('en-IN')}`;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
 
-    // Update dynamic QR Code source from settings
-    const qrImage = document.querySelector(".qr-box img");
-    if (qrImage) {
-        qrImage.src = settings.qrImg;
-    }
+        body {
+            background-color: #f9fafb;
+            color: var(--dark-color);
+            display: flex;
+            min-height: 100vh;
+        }
 
-    // 2. Format Mobile Deeplinking intent URLs
-    const payBtn = document.querySelector(".pay-btn");
-    if (payBtn) {
-        const upiIntentString = `upi://pay?pa=${settings.upiId}&pn=${encodeURIComponent(settings.merchantName)}&am=${settings.advanceAmt}&cu=INR`;
-        payBtn.href = upiIntentString;
-    }
+        /* Login Screen */
+        #loginOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(17, 24, 39, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.3s ease;
+        }
 
-    // Configure support redirect buttons
-    const uploadBtn = document.querySelector(".upload-btn");
-    if (uploadBtn) {
-        const textMessage = encodeURIComponent(`I have completed my advance payment for Order ID #${currentOrder.id}. Sending payment proof verification.`);
-        uploadBtn.href = `https://wa.me/${settings.waNumber}?text=${textMessage}`;
-    }
-});
+        .login-box {
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
 
-// Verification count countdown timer
-let time = 600;
-const countdown = document.getElementById("countdown");
-setInterval(function() {
-    if (time > 0) {
-        time--;
-        let min = Math.floor(time / 60);
-        let sec = time % 60;
-        countdown.innerHTML = String(min).padStart(2, '0') + ":" + String(sec).padStart(2, '0');
-    }
-}, 1000);
-</script>
+        .login-box h2 {
+            margin-bottom: 10px;
+            font-size: 24px;
+            color: var(--dark-color);
+        }
+
+        .login-box p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+        }
+
+        .login-box input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .login-box button:hover {
+            background: var(--secondary-color);
+        }
+
+        .login-error {
+            color: var(--danger-color);
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 260px;
+            background: #111827;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #374151;
+            color: #f3f4f6;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar-item {
+            padding: 12px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-item:hover, .sidebar-item.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Main Content Panel */
+        .main-panel {
+            flex-grow: 1;
+            padding: 40px;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .panel-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #374151;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background: var(--danger-color);
+        }
+
+        /* Dynamic Panel Tabs */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Dashboard Overview Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+
+        /* Tables style */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f9fafb;
+            padding: 16px 24px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #4b5563;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Status Badges */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-pending { background: #fef9c3; color: #854d0e; }
+        .badge-approved { background: #dcfce7; color: #166534; }
+        .badge-shipped { background: #dbeafe; color: #1e40af; }
+        .badge-cancelled { background: #fee2e2; color: #991b1b; }
+
+        /* Form styling */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn-action {
+            padding: 12px 24px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-action:hover {
+            background: var(--secondary-color);
+        }
+
+        .btn-delete {
+            background: var(--danger-color);
+        }
+
+        .btn-delete:hover {
+            background: #b91c1c;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            margin-right: 5px;
+        }
+
+        /* Order Address Block */
+        .address-box {
+            max-width: 250px;
+            white-space: normal;
+            word-break: break-all;
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                padding: 15px;
+            }
+            .main-panel {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Simple Login Protection Layer -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2>Administrative Access</h2>
+            <p>Please enter your secret password to manage orders and system configurations.</p>
+            <input type="password" id="adminPass" placeholder="Enter Admin Password" value="">
+            <button onclick="attemptLogin()">Log In</button>
+            <div id="loginError" class="login-error">Invalid password. Please try again.</div>
+        </div>
+    </div>
+
+    <!-- Sidebar Menu Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">Tech Gadget Zone</div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item active" onclick="switchTab('dashboard', this)">📊 Dashboard</li>
+            <li class="sidebar-item" onclick="switchTab('orders', this)">🛒 Order Manager</li>
+            <li class="sidebar-item" onclick="switchTab('products', this)">📦 Product Manager</li>
+            <li class="sidebar-item" onclick="switchTab('settings', this)">⚙️ Settings</li>
+        </ul>
+    </aside>
+
+    <!-- Main Board -->
+    <main class="main-panel">
+        <header class="panel-header">
+            <h1 id="panelTitle">Dashboard Overview</h1>
+            <button class="logout-btn" onclick="logoutAdmin()">Logout</button>
+        </header>
+
+        <!-- TAB: DASHBOARD -->
+        <section id="dashboardTab" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Total Orders</div>
+                    <div id="statTotalOrders" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Approved Revenue</div>
+                    <div id="statRevenue" class="stat-value">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Pending Orders</div>
+                    <div id="statPendingOrders" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Products Live</div>
+                    <div id="statTotalProducts" class="stat-value">0</div>
+                </div>
+            </div>
+
+            <h2>Recent Order Feed</h2>
+            <br>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Name</th>
+                            <th>Product Details</th>
+                            <th>Status</th>
+                            <th>Advance Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentOrdersTableBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB: ORDER MANAGER -->
+        <section id="ordersTab" class="tab-content">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date / Time</th>
+                            <th>Customer / Contact</th>
+                            <th>Complete Address</th>
+                            <th>Product &amp; Qty</th>
+                            <th>Status Action</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allOrdersTableBody">
+                        <!-- Dynamic list of orders -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB: PRODUCT MANAGER -->
+        <section id="productsTab" class="tab-content">
+            <h2>Add / Modify Dynamic Products</h2>
+            <br>
+            <form id="productForm" onsubmit="saveProduct(event)" class="form-grid" style="background: white; padding: 25px; border-radius:16px; border: 1px solid var(--border-color);">
+                <input type="hidden" id="editProductIndex" value="">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="prodName" required placeholder="e.g., iPhone 17 Pro Max">
+                </div>
+                <div class="form-group">
+                    <label>Discount Badge Text</label>
+                    <input type="text" id="prodBadge" placeholder="e.g., 65% OFF">
+                </div>
+                <div class="form-group">
+                    <label>Actual Store Price (₹)</label>
+                    <input type="number" id="prodNewPrice" required placeholder="e.g., 27965">
+                </div>
+                <div class="form-group">
+                    <label>Market Retail Price (MRP) (₹)</label>
+                    <input type="number" id="prodOldPrice" required placeholder="e.g., 79900">
+                </div>
+                <div class="form-group">
+                    <label>Image Resource Path</label>
+                    <input type="text" id="prodImg" required placeholder="e.g., images/iphone-17.png">
+                </div>
+                <div class="form-group" style="justify-content: flex-end;">
+                    <button type="submit" class="btn-action">Publish Product</button>
+                </div>
+            </form>
+
+            <h2>Store Inventory</h2>
+            <br>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Product Title</th>
+                            <th>Badge</th>
+                            <th>Discounted Price</th>
+                            <th>Original Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- Managed products -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB: SYSTEM SETTINGS -->
+        <section id="settingsTab" class="tab-content">
+            <form id="settingsForm" onsubmit="saveSettings(event)" class="form-grid" style="background: white; padding: 30px; border-radius:16px; border: 1px solid var(--border-color);">
+                <div class="form-group">
+                    <label>UPI Address (VPA)</label>
+                    <input type="text" id="setUpiId" required placeholder="e.g., yourname@upi">
+                </div>
+                <div class="form-group">
+                    <label>Payment Portal Merchant Name</label>
+                    <input type="text" id="setMerchantName" required placeholder="e.g., Tech Gadget Zone India">
+                </div>
+                <div class="form-group">
+                    <label>Advance Booking Amount (₹)</label>
+                    <input type="number" id="setAdvanceAmt" required placeholder="e.g., 5000">
+                </div>
+                <div class="form-group">
+                    <label>Support WhatsApp Contact Number (With country code, no +)</label>
+                    <input type="text" id="setWaNumber" required placeholder="e.g., 16728972711">
+                </div>
+                <div class="form-group">
+                    <label>Helpline Phone Line</label>
+                    <input type="text" id="setCallNumber" required placeholder="e.g., +16728972711">
+                </div>
+                <div class="form-group">
+                    <label>Dynamic Payment QR Code Image Link</label>
+                    <input type="text" id="setQrImg" required placeholder="e.g., images/shop.jpg">
+                </div>
+                <div class="form-group" style="justify-content: flex-end; grid-column: 1 / -1;">
+                    <button type="submit" class="btn-action">Save System Configuration</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        // Default system state fallback
+        const DEFAULT_SETTINGS = {
+            upiId: "7866986738@axl",
+            merchantName: "Tech Gadget Zone India",
+            advanceAmt: 5000,
+            waNumber: "16728972711",
+            callNumber: "+16728972711",
+            qrImg: "images/shop.jpg"
+        };
+
+        const DEFAULT_PRODUCTS = [
+            { name: "iPhone 17", badge: "65% OFF", newPrice: 27965, oldPrice: 79900, img: "images/iphone-17.png" },
+            { name: "Galaxy S26 Ultra", badge: "65% OFF", newPrice: 45500, oldPrice: 129999, img: "images/galaxy-s26-ultra.png" },
+            { name: "OnePlus 15", badge: "65% OFF", newPrice: 28000, oldPrice: 79999, img: "images/oneplus-15.png" },
+            { name: "Pixel 10 Pro XL", badge: "65% OFF", newPrice: 43750, oldPrice: 124999, img: "images/pixel-10-pro-xl.png" }
+        ];
+
+        // Authorization checks
+        function attemptLogin() {
+            const password = document.getElementById('adminPass').value;
+            if (password === 'admin123') { // Hardcoded default passcode, you can change this
+                sessionStorage.setItem('adminAuthorized', 'true');
+                document.getElementById('loginOverlay').style.display = 'none';
+                initDashboard();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        window.addEventListener('load', () => {
+            if (sessionStorage.getItem('adminAuthorized') === 'true') {
+                document.getElementById('loginOverlay').style.display = 'none';
+                initDashboard();
+            }
+        });
+
+        function logoutAdmin() {
+            sessionStorage.removeItem('adminAuthorized');
+            window.location.reload();
+        }
+
+        // Dashboard Tabs switching logic
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            
+            document.getElementById(tabId + 'Tab').classList.add('active');
+            el.classList.add('active');
+
+            const tabTitles = {
+                dashboard: "Dashboard Overview",
+                orders: "Order & Verification Pipeline",
+                products: "Product Catalog Management",
+                settings: "Site Configuration"
+            };
+            document.getElementById('panelTitle').textContent = tabTitles[tabId];
+            initDashboard();
+        }
+
+        // Initialize state arrays from localStorage
+        function getOrders() {
+            return JSON.parse(localStorage.getItem('tgzi_orders') || '[]');
+        }
+
+        function getProducts() {
+            let prods = localStorage.getItem('tgzi_products');
+            if(!prods) {
+                localStorage.setItem('tgzi_products', JSON.stringify(DEFAULT_PRODUCTS));
+                return DEFAULT_PRODUCTS;
+            }
+            return JSON.parse(prods);
+        }
+
+        function getSettings() {
+            let settings = localStorage.getItem('tgzi_settings');
+            if(!settings) {
+                localStorage.setItem('tgzi_settings', JSON.stringify(DEFAULT_SETTINGS));
+                return DEFAULT_SETTINGS;
+            }
+            return JSON.parse(settings);
+        }
+
+        // Refresh database views
+        function initDashboard() {
+            const orders = getOrders();
+            const products = getProducts();
+            const settings = getSettings();
+
+            // Calculate metrics
+            document.getElementById('statTotalOrders').textContent = orders.length;
+            document.getElementById('statTotalProducts').textContent = products.length;
+
+            const pending = orders.filter(o => o.status === 'Pending').length;
+            document.getElementById('statPendingOrders').textContent = pending;
+
+            const approvedRevenue = orders
+                .filter(o => o.status === 'Approved' || o.status === 'Shipped')
+                .reduce((acc, current) => acc + parseInt(current.advanceAmount || 0), 0);
+            document.getElementById('statRevenue').textContent = '₹' + approvedRevenue.toLocaleString('en-IN');
+
+            // Render Recent Orders on home Dashboard Tab
+            const recentBody = document.getElementById('recentOrdersTableBody');
+            recentBody.innerHTML = '';
+            orders.slice(-5).reverse().forEach(o => {
+                recentBody.innerHTML += `
+                    <tr>
+                        <td><strong>#${o.id}</strong></td>
+                        <td>${o.fullName}</td>
+                        <td>${o.productModel} (x${o.quantity})</td>
+                        <td><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></td>
+                        <td>₹${parseInt(o.advanceAmount).toLocaleString('en-IN')}</td>
+                    </tr>
+                `;
+            });
+
+            // Render Orders Tab Table
+            const allOrdersBody = document.getElementById('allOrdersTableBody');
+            allOrdersBody.innerHTML = '';
+            orders.slice().reverse().forEach((o, index) => {
+                const absoluteIndex = orders.length - 1 - index;
+                allOrdersBody.innerHTML += `
+                    <tr>
+                        <td><strong>#${o.id}</strong></td>
+                        <td><small>${o.timestamp || 'N/A'}</small></td>
+                        <td>
+                            <strong>${o.fullName}</strong><br>
+                            <span style="font-size:12px; color:#4b5563;">📞 ${o.mobile}</span>
+                        </td>
+                        <td><div class="address-box">${o.address}</div></td>
+                        <td>
+                            <strong>${o.productModel}</strong><br>
+                            Qty: ${o.quantity}
+                        </td>
+                        <td>
+                            <select onchange="updateOrderStatus(${absoluteIndex}, this.value)" style="padding: 6px; border-radius:6px; border:1px solid var(--border-color); font-size:13px;">
+                                <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Approved" ${o.status === 'Approved' ? 'selected' : ''}>Approved</option>
+                                <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                                <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn-small btn-delete" onclick="deleteOrder(${absoluteIndex})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Render Inventory Tab
+            const invBody = document.getElementById('inventoryTableBody');
+            invBody.innerHTML = '';
+            products.forEach((p, idx) => {
+                invBody.innerHTML += `
+                    <tr>
+                        <td><img src="${p.img}" alt="" style="width: 40px; height: 40px; object-fit: contain; border-radius: 6px;"></td>
+                        <td><strong>${p.name}</strong></td>
+                        <td><span class="badge" style="background:#fee2e2; color:var(--danger-color);">${p.badge}</span></td>
+                        <td>₹${parseInt(p.newPrice).toLocaleString('en-IN')}</td>
+                        <td>₹${parseInt(p.oldPrice).toLocaleString('en-IN')}</td>
+                        <td>
+                            <button class="btn-small" style="background:#4b5563;" onclick="loadEditProduct(${idx})">Edit</button>
+                            <button class="btn-small btn-delete" onclick="deleteProduct(${idx})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Populate system configuration fields in tab
+            document.getElementById('setUpiId').value = settings.upiId;
+            document.getElementById('setMerchantName').value = settings.merchantName;
+            document.getElementById('setAdvanceAmt').value = settings.advanceAmt;
+            document.getElementById('setWaNumber').value = settings.waNumber;
+            document.getElementById('setCallNumber').value = settings.callNumber;
+            document.getElementById('setQrImg').value = settings.qrImg;
+        }
+
+        // Modify order workflows
+        function updateOrderStatus(index, newStatus) {
+            const orders = getOrders();
+            orders[index].status = newStatus;
+            localStorage.setItem('tgzi_orders', JSON.stringify(orders));
+            initDashboard();
+        }
+
+        function deleteOrder(index) {
+            if(confirm("Are you sure you want to completely remove this order record?")) {
+                const orders = getOrders();
+                orders.splice(index, 1);
+                localStorage.setItem('tgzi_orders', JSON.stringify(orders));
+                initDashboard();
+            }
+        }
+
+        // Product addition & alterations
+        function saveProduct(e) {
+            e.preventDefault();
+            const idx = document.getElementById('editProductIndex').value;
+            const products = getProducts();
+
+            const pData = {
+                name: document.getElementById('prodName').value,
+                badge: document.getElementById('prodBadge').value || "OFFER",
+                newPrice: parseFloat(document.getElementById('prodNewPrice').value),
+                oldPrice: parseFloat(document.getElementById('prodOldPrice').value),
+                img: document.getElementById('prodImg').value
+            };
+
+            if(idx !== "") {
+                // Edit mode
+                products[idx] = pData;
+            } else {
+                // Create mode
+                products.push(pData);
+            }
+
+            localStorage.setItem('tgzi_products', JSON.stringify(products));
+            document.getElementById('productForm').reset();
+            document.getElementById('editProductIndex').value = "";
+            initDashboard();
+        }
+
+        function loadEditProduct(idx) {
+            const products = getProducts();
+            const p = products[idx];
+            document.getElementById('editProductIndex').value = idx;
+            document.getElementById('prodName').value = p.name;
+            document.getElementById('prodBadge').value = p.badge;
+            document.getElementById('prodNewPrice').value = p.newPrice;
+            document.getElementById('prodOldPrice').value = p.oldPrice;
+            document.getElementById('prodImg').value = p.img;
+            
+            // Focus form
+            document.getElementById('prodName').focus();
+        }
+
+        function deleteProduct(idx) {
+            if(confirm("Confirm removal of this item from inventory?")) {
+                const products = getProducts();
+                products.splice(idx, 1);
+                localStorage.setItem('tgzi_products', JSON.stringify(products));
+                initDashboard();
+            }
+        }
+
+        // System setup settings update
+        function saveSettings(e) {
+            e.preventDefault();
+            const sData = {
+                upiId: document.getElementById('setUpiId').value,
+                merchantName: document.getElementById('setMerchantName').value,
+                advanceAmt: parseInt(document.getElementById('setAdvanceAmt').value),
+                waNumber: document.getElementById('setWaNumber').value,
+                callNumber: document.getElementById('setCallNumber').value,
+                qrImg: document.getElementById('setQrImg').value
+            };
+
+            localStorage.setItem('tgzi_settings', JSON.stringify(sData));
+            alert("System configuration successfully updated.");
+            initDashboard();
+        }
+    </script>
+</body>
+</html>
